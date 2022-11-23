@@ -1,0 +1,10 @@
+config:
+  phases:
+    - duration: 60
+      arrivalRate: 25
+  http:
+    timeout: 29
+scenarios:
+  - flow:
+      - get:
+          url: /
