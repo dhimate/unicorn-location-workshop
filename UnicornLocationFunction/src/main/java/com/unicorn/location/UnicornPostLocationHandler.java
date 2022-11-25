@@ -19,10 +19,8 @@ import com.google.gson.Gson;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
@@ -37,7 +35,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
 
     private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
-   private final DynamoDbAsyncClient dynamoDbClient;
+    private final DynamoDbAsyncClient dynamoDbClient;
 
     public UnicornPostLocationHandler() {
         // dynamoDbClient = DynamoDbClient
@@ -103,9 +101,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
          try {
             dynamoDbClient.putItem(putItemRequest).get();
         } catch (InterruptedException | ExecutionException e) {
-            // TODO Auto-generated catch block
             throw new RuntimeException("Error creating Put Item request");
-            //e.printStackTrace();
         }
      }
      
