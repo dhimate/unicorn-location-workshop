@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+  build:
+    commands:
+      - mvn install -f UnicornLocationFunction/pom.xml
+      - sam package 
+        --template-file template.yaml 
+        --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-1cgbyrg19wrd4 
+        --output-template-file packaged-template.yml
+artifacts:
+  files:
+    - packaged-template.yml
