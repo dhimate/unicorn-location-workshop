@@ -1,0 +1,1 @@
+curl -XGET ${API_GW_URL} | jq

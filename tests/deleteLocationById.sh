@@ -1,0 +1,1 @@
+curl -XDELETE ${API_GW_URL}$1 | jq
