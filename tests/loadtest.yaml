@@ -1,6 +1,6 @@
 config:
   phases:
-    - duration: 120
+    - duration: 300
       arrivalRate: 60
   http:
     timeout: 30

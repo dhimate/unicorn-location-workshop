@@ -2,7 +2,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   unicorn-location-workshop
-  SAM Template for unicorn-location-workshop
+
+  Sample SAM Template for unicorn-location-workshop
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Parameters:
@@ -11,6 +12,12 @@ Parameters:
     Description: Stage name to deploy resources to
     AllowedValues:
       - Prod
+  SnapStart:
+    Type: String
+    Description: Enable SnapStart on lambda functions
+    AllowedValues:
+      - None
+      - PublishedVersions
 
 Globals:
   Function:
@@ -50,7 +57,7 @@ Resources:
       Handler: com.unicorn.location.UnicornPostLocationHandler::handleRequest
       Runtime: java11
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !Ref SnapStart
       Architectures:
         - x86_64
       Policies:
@@ -77,7 +84,7 @@ Resources:
       Handler: com.unicorn.location.UnicornGetLocationHandler::handleRequest
       Runtime: java11
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !Ref SnapStart
       Architectures:
         - x86_64
       Policies:
@@ -110,7 +117,7 @@ Resources:
       Handler: com.unicorn.location.UnicornPutLocationHandler::handleRequest
       Runtime: java11
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !Ref SnapStart
       Architectures:
         - x86_64
       Policies:
@@ -137,7 +144,7 @@ Resources:
       Handler: com.unicorn.location.UnicornDeleteLocationHandler::handleRequest
       Runtime: java11
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !Ref SnapStart
       Architectures:
         - x86_64
       Policies:
