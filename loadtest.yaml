@@ -1,9 +1,9 @@
 config:
   phases:
-    - duration: 30
-      arrivalRate: 25
+    - duration: 300
+      arrivalRate: 60
   http:
-    timeout: 29
+    timeout: 30
 scenarios:
   - flow:
       - get:

@@ -35,8 +35,8 @@
   </dependencyManagement>
   <properties>
     <maven.compiler.target>11</maven.compiler.target>
-    <aws.java.sdk.version>2.18.23</aws.java.sdk.version>
-    <org.slf4j.version>2.0.4</org.slf4j.version>
+    <aws.java.sdk.version>2.18.26</aws.java.sdk.version>
+    <org.slf4j.version>2.0.5</org.slf4j.version>
     <maven.compiler.source>11</maven.compiler.source>
   </properties>
 </project>

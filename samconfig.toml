@@ -8,4 +8,5 @@ s3_prefix = "unicorn-location-api"
 region = "us-east-1"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Stage=\"Prod\""
 image_repositories = []

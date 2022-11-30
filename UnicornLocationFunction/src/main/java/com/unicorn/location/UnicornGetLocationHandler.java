@@ -49,15 +49,15 @@ public class UnicornGetLocationHandler
             e.printStackTrace();
         }
 
-    } */
+    }  */
 
     public UnicornGetLocationHandler() throws URISyntaxException {
         dynamoDbClient = DynamoDbClient
                 .builder()
-                .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
+//                .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
                 // .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
                 .region(Region.US_EAST_1)
-                .endpointOverride(new URI("https://dynamodb.us-east-1.amazonaws.com"))
+//                .endpointOverride(new URI("https://dynamodb.us-east-1.amazonaws.com"))
                 .httpClientBuilder(UrlConnectionHttpClient.builder())
                 .overrideConfiguration(ClientOverrideConfiguration.builder().build())
                 .build();

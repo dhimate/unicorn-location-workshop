@@ -22,6 +22,7 @@ import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import org.slf4j.Logger;
@@ -31,9 +32,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Handler for requests to Lambda function.
  */
-public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class UnicornDeleteLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(UnicornDeleteLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
 
@@ -50,7 +51,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
 
     }  */
 
-    public UnicornPostLocationHandler() {
+    public UnicornDeleteLocationHandler() {
         // dynamoDbClient = DynamoDbClient
         //         .builder()
         //         .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
@@ -75,19 +76,14 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
                 .withHeaders(headers);
         try {
 
-
-            UnicornLocation unicornLocation = new Gson().fromJson(input.getBody(), UnicornLocation.class);
-            unicornLocation.setId(input.getPathParameters() != null? input.getPathParameters().get("id"): UUID.randomUUID().toString());
-            createLocationItem(unicornLocation);
-            String output = "Received unicorn " + unicornLocation.getUnicornName();
-
-
+            String id = (input.getPathParameters() != null ? input.getPathParameters().get("id") : null);
+            if (id != null)
+                deleteLocationItem(id);
             // final String pageContents = this.getPageContents("https://checkip.amazonaws.com");
             // String output = String.format("{ \"message\": \"hello world\", \"location\": \"%s\" }", pageContents);
-
             return response
-                    .withStatusCode(200)
-                    .withBody(output);
+                    .withStatusCode(200);
+//                    .withBody(output);
         } catch (Exception e) {
             logger.error("Error while processing request",e);
             return response
@@ -96,29 +92,17 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
         }
     }
 
-    private String getPageContents(String address) throws IOException{
-        URL url = new URL(address);
-        try(BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
-            return br.lines().collect(Collectors.joining(System.lineSeparator()));
-        }
-    }
-
-    private void createLocationItem(UnicornLocation unicornLocation) {
-        var putItemRequest = PutItemRequest.builder().item(
-         Map.of( 
-            //"id", AttributeValue.fromS(UUID.randomUUID().toString()),
-                 "id", AttributeValue.fromS(UUID.randomUUID().toString()),
-                "unicornName", AttributeValue.fromS(unicornLocation.getUnicornName()),
-                 "latitude", AttributeValue.fromS(unicornLocation.getLatitude()),
-                 "longitude", AttributeValue.fromS(unicornLocation.getLongitude())
-         ))
-         .tableName("unicorn-locations")
-         .build();
-     
+    private void deleteLocationItem(String id) {        
+        DeleteItemRequest deleteItemRequest =  DeleteItemRequest.builder()
+                        .tableName("unicorn-locations").
+                        key(Map.of("id", AttributeValue.builder().s(id).build()))
+                        //.expressionAttributeNames(Map.of("#id", "id"))
+                        //.expressionAttributeValues(Map.of(":id", AttributeValue.builder().s(id).build()))
+                        .build();    
          try {
-            dynamoDbClient.putItem(putItemRequest).get();
+            dynamoDbClient.deleteItem(deleteItemRequest).get();
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Error creating Put Item request");
+            throw new RuntimeException("Error creating Delete Item request");
         }
      }
      

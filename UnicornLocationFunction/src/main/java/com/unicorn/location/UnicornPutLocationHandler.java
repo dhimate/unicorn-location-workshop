@@ -21,8 +21,11 @@ import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Handler for requests to Lambda function.
  */
-public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
@@ -50,7 +53,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
 
     }  */
 
-    public UnicornPostLocationHandler() {
+    public UnicornPutLocationHandler() {
         // dynamoDbClient = DynamoDbClient
         //         .builder()
         //         .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
@@ -78,7 +81,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
 
             UnicornLocation unicornLocation = new Gson().fromJson(input.getBody(), UnicornLocation.class);
             unicornLocation.setId(input.getPathParameters() != null? input.getPathParameters().get("id"): UUID.randomUUID().toString());
-            createLocationItem(unicornLocation);
+            updateLocationItem(unicornLocation);
             String output = "Received unicorn " + unicornLocation.getUnicornName();
 
 
@@ -96,29 +99,25 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
         }
     }
 
-    private String getPageContents(String address) throws IOException{
-        URL url = new URL(address);
-        try(BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
-            return br.lines().collect(Collectors.joining(System.lineSeparator()));
-        }
-    }
 
-    private void createLocationItem(UnicornLocation unicornLocation) {
-        var putItemRequest = PutItemRequest.builder().item(
-         Map.of( 
-            //"id", AttributeValue.fromS(UUID.randomUUID().toString()),
-                 "id", AttributeValue.fromS(UUID.randomUUID().toString()),
-                "unicornName", AttributeValue.fromS(unicornLocation.getUnicornName()),
-                 "latitude", AttributeValue.fromS(unicornLocation.getLatitude()),
-                 "longitude", AttributeValue.fromS(unicornLocation.getLongitude())
-         ))
-         .tableName("unicorn-locations")
-         .build();
+
+
+    private void updateLocationItem(UnicornLocation unicornLocation) {
+        UpdateItemRequest updateItemRequest = UpdateItemRequest.builder()
+        .key(Map.of("id", AttributeValue.builder().s(unicornLocation.getId()).build()))
+        .updateExpression("SET unicornName = :unicornName, longitude = :longitude, latitude = :latitude")
+        .expressionAttributeValues(Map.of(
+            ":unicornName", AttributeValue.builder().s(unicornLocation.getUnicornName()).build(),
+            ":longitude", AttributeValue.builder().s(unicornLocation.getLongitude()).build(),
+            ":latitude", AttributeValue.builder().s(unicornLocation.getLatitude()).build()
+        ))
+        .tableName("unicorn-locations")
+        .build();
      
          try {
-            dynamoDbClient.putItem(putItemRequest).get();
+            dynamoDbClient.updateItem(updateItemRequest).get();
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Error creating Put Item request");
+            throw new RuntimeException("Error creating Update Item request");
         }
      }
      
