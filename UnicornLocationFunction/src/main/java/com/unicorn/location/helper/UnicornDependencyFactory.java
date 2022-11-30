@@ -29,10 +29,11 @@ public class UnicornDependencyFactory {
                 .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
                 .build();
     */    
-
+        // Region region = (System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable()))==null? Region.US_EAST_1 : Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable()));
         return DynamoDbAsyncClient
         .builder()
         .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
+        // .region(region)
         .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
         .build();
     }

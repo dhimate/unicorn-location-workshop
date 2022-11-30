@@ -1,2 +1,6 @@
+/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/model/UnicornLocation.java
+/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/helper/UnicornDependencyFactory.java
+/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/UnicornPutLocationHandler.java
 /Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/UnicornPostLocationHandler.java
-/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/UnicornLocation.java
+/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/UnicornDeleteLocationHandler.java
+/Users/dhimate/Documents/AWS/Training/SAM/unicorn-location-workshop/UnicornLocationFunction/src/main/java/com/unicorn/location/UnicornGetLocationHandler.java

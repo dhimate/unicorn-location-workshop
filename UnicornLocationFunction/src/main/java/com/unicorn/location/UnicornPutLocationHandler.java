@@ -11,21 +11,18 @@ import com.google.gson.Gson;
 import com.unicorn.location.helper.UnicornDependencyFactory;
 import com.unicorn.location.model.UnicornLocation;
 
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
  * Handler for requests to Lambda function.
  */
+@Slf4j
 public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornPutLocationHandler.class);
-   //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
     private final String tableName;
 
@@ -35,7 +32,7 @@ public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxy
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
-        logger.info("Received a request here!");
+        log.info("Received a request here!");
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
         headers.put("X-Custom-Header", "application/json");
@@ -53,7 +50,7 @@ public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxy
                     .withStatusCode(200)
                     .withBody(output);
         } catch (Exception e) {
-            logger.error("Error while processing request",e);
+            log.error("Error while processing request",e);
             return response
                     .withBody("{'message' :'" + e.getMessage() + "'}")
                     .withStatusCode(400);
@@ -76,7 +73,7 @@ public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxy
          try {
             dynamoDbClient.updateItem(updateItemRequest).get();
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Update Item request");
         }

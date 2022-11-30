@@ -12,12 +12,11 @@ import com.google.gson.Gson;
 import com.unicorn.location.helper.UnicornDependencyFactory;
 import com.unicorn.location.model.UnicornLocation;
 
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
@@ -27,27 +26,12 @@ import java.lang.String;
 /**
  * Handler for requests to Lambda function.
  */
+@Slf4j
 public class UnicornGetLocationHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornGetLocationHandler.class);
-    // private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
     private final String tableName;
-
-    // Removed the static code loading to accomodate SnapStart feature.
-    /* static {
-
-        UnicornGetLocationHandler unicornGetLocationHandler;
-        try {
-            unicornGetLocationHandler = new UnicornGetLocationHandler();
-            System.out.println(new Gson().toJson(unicornGetLocationHandler.getAllLocations()));
-        } catch (URISyntaxException e) {
-
-            e.printStackTrace();
-        }
-
-    }  */
 
     public UnicornGetLocationHandler() {
         dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
@@ -55,7 +39,7 @@ public class UnicornGetLocationHandler
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
-        logger.info("Received a request here!");
+        log.info("Received a request here!");
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
         headers.put("X-Custom-Header", "application/json");
@@ -72,13 +56,13 @@ public class UnicornGetLocationHandler
             else
                 output = new Gson().toJson(getLocationById(id));
 
-            logger.info(output);
+            log.info(output);
 
             return response
                     .withStatusCode(200)
                     .withBody(output);
         } catch (Exception e) {
-            logger.error("Error while processing request", e);
+            log.error("Error while processing request", e);
             return response
                     .withBody("{'message' :'" + e.getMessage() + "'}")
                     .withStatusCode(400);
@@ -103,7 +87,7 @@ public class UnicornGetLocationHandler
             return items;
 
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Scan Item request");
 
@@ -134,7 +118,7 @@ public class UnicornGetLocationHandler
             return items;
 
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Query Item request");
 

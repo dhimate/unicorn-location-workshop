@@ -11,36 +11,20 @@ import com.google.gson.Gson;
 import com.unicorn.location.helper.UnicornDependencyFactory;
 import com.unicorn.location.model.UnicornLocation;
 
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
  * Handler for requests to Lambda function.
  */
+@Slf4j
 public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
-   //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
     private final String tableName;
-
-    // Removed the static code loading to accomodate SnapStart feature.
-    /* static {
-
-        UnicornPostLocationHandler unicornPostLocationHandler;
-        try {
-            unicornPostLocationHandler = new UnicornPostLocationHandler();
-            unicornPostLocationHandler.createLocationItem(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }  */
 
     public UnicornPostLocationHandler() {
         dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
@@ -48,7 +32,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
-        logger.info("Received a request here!");
+        log.info("Received a request here!");
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
         headers.put("X-Custom-Header", "application/json");
@@ -66,7 +50,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
                     .withStatusCode(200)
                     .withBody(output);
         } catch (Exception e) {
-            logger.error("Error while processing request",e);
+            log.error("Error while processing request",e);
             return response
                     .withBody("{'message' :'" + e.getMessage() + "'}")
                     .withStatusCode(400);
@@ -88,7 +72,7 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
          try {
             dynamoDbClient.putItem(putItemRequest).get();
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Put Item request");
         }
