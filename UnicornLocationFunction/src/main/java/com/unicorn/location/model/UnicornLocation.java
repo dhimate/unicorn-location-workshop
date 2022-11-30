@@ -1,4 +1,4 @@
-package com.unicorn.location;
+package com.unicorn.location.model;
 
 public class UnicornLocation {
     private String unicornName;

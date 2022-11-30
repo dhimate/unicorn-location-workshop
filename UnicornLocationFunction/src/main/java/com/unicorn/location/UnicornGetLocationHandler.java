@@ -9,12 +9,10 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import com.unicorn.location.helper.UnicornDependencyFactory;
+import com.unicorn.location.model.UnicornLocation;
 
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
-import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
@@ -25,8 +23,6 @@ import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.lang.String;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Handler for requests to Lambda function.
@@ -34,10 +30,12 @@ import java.net.URISyntaxException;
 public class UnicornGetLocationHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
-    private final DynamoDbClient dynamoDbClient;
-    // private final DynamoDbAsyncClient dynamoDbClient;
+    private final Logger logger = LoggerFactory.getLogger(UnicornGetLocationHandler.class);
+    // private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbAsyncClient dynamoDbClient;
+    private final String tableName;
 
+    // Removed the static code loading to accomodate SnapStart feature.
     /* static {
 
         UnicornGetLocationHandler unicornGetLocationHandler;
@@ -45,28 +43,15 @@ public class UnicornGetLocationHandler
             unicornGetLocationHandler = new UnicornGetLocationHandler();
             System.out.println(new Gson().toJson(unicornGetLocationHandler.getAllLocations()));
         } catch (URISyntaxException e) {
-            // TODO Auto-generated catch block
+
             e.printStackTrace();
         }
 
     }  */
 
-    public UnicornGetLocationHandler() throws URISyntaxException {
-        dynamoDbClient = DynamoDbClient
-                .builder()
-//                .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-                // .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-                .region(Region.US_EAST_1)
-//                .endpointOverride(new URI("https://dynamodb.us-east-1.amazonaws.com"))
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
-                .overrideConfiguration(ClientOverrideConfiguration.builder().build())
-                .build();
-        // dynamoDbClient = DynamoDbAsyncClient
-        // .builder()
-        // .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-        // .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-        // .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
-        // .build();
+    public UnicornGetLocationHandler() {
+        dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
+        tableName = UnicornDependencyFactory.tableName();
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
@@ -89,11 +74,6 @@ public class UnicornGetLocationHandler
 
             logger.info(output);
 
-            // final String pageContents =
-            // this.getPageContents("https://checkip.amazonaws.com");
-            // String output = String.format("{ \"message\": \"hello world\", \"location\":
-            // \"%s\" }", pageContents);
-
             return response
                     .withStatusCode(200)
                     .withBody(output);
@@ -106,11 +86,11 @@ public class UnicornGetLocationHandler
     }
 
     private ArrayList<UnicornLocation> getAllLocations() {
-        var scanRequest = ScanRequest.builder().tableName("unicorn-locations").build();
+        var scanRequest = ScanRequest.builder().tableName(tableName).build();
 
         try {
             ArrayList<UnicornLocation> items = new ArrayList<>();
-            ScanResponse response = dynamoDbClient.scan(scanRequest);
+            ScanResponse response = dynamoDbClient.scan(scanRequest).get();
 
             response.items().forEach(item -> {
                 UnicornLocation unicornLocation = new UnicornLocation();
@@ -123,6 +103,7 @@ public class UnicornGetLocationHandler
             return items;
 
         } catch (Exception e) {
+            logger.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Scan Item request");
 
@@ -132,7 +113,7 @@ public class UnicornGetLocationHandler
     private ArrayList<UnicornLocation> getLocationById(String id) {
 
         var queryRequest = QueryRequest.builder()
-                .tableName("unicorn-locations")
+                .tableName(tableName)
                 .keyConditionExpression("#id = :id")
                 .expressionAttributeNames(Map.of("#id", "id"))
                 .expressionAttributeValues(Map.of(":id", AttributeValue.builder().s(id).build()))
@@ -140,7 +121,7 @@ public class UnicornGetLocationHandler
 
         try {
             ArrayList<UnicornLocation> items = new ArrayList<>();
-            QueryResponse response = dynamoDbClient.query(queryRequest);
+            QueryResponse response = dynamoDbClient.query(queryRequest).get();
 
             response.items().forEach(item -> {
                 UnicornLocation unicornLocation = new UnicornLocation();
@@ -153,6 +134,7 @@ public class UnicornGetLocationHandler
             return items;
 
         } catch (Exception e) {
+            logger.error(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error creating Query Item request");
 

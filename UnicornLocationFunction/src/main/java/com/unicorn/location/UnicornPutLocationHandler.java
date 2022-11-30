@@ -3,15 +3,14 @@ package com.unicorn.location;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import com.unicorn.location.helper.UnicornDependencyFactory;
+import com.unicorn.location.model.UnicornLocation;
 
-import software.amazon.awssdk.core.SdkSystemSetting;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
@@ -25,36 +24,14 @@ import org.slf4j.LoggerFactory;
  */
 public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(UnicornPutLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
-
-    /* static {
-
-        UnicornPostLocationHandler unicornPostLocationHandler;
-        try {
-            unicornPostLocationHandler = new UnicornPostLocationHandler();
-            unicornPostLocationHandler.createLocationItem(null);
-        } catch (Exception e) {
-            
-            e.printStackTrace();
-        }
-
-    }  */
+    private final String tableName;
 
     public UnicornPutLocationHandler() {
-        // dynamoDbClient = DynamoDbClient
-        //         .builder()
-        //         .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-        //         .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-        //         .httpClientBuilder(UrlConnectionHttpClient.builder())
-        //         .build();
-        dynamoDbClient = DynamoDbAsyncClient
-            .builder()
-//            .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-            .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-//            .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
-            .build();
+        dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
+        tableName = UnicornDependencyFactory.tableName();
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
@@ -67,15 +44,10 @@ public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxy
                 .withHeaders(headers);
         try {
 
-
             UnicornLocation unicornLocation = new Gson().fromJson(input.getBody(), UnicornLocation.class);
             unicornLocation.setId(input.getPathParameters() != null? input.getPathParameters().get("id"): UUID.randomUUID().toString());
             updateLocationItem(unicornLocation);
             String output = "Received unicorn " + unicornLocation.getUnicornName();
-
-
-            // final String pageContents = this.getPageContents("https://checkip.amazonaws.com");
-            // String output = String.format("{ \"message\": \"hello world\", \"location\": \"%s\" }", pageContents);
 
             return response
                     .withStatusCode(200)
@@ -98,12 +70,14 @@ public class UnicornPutLocationHandler implements RequestHandler<APIGatewayProxy
             ":longitude", AttributeValue.builder().s(unicornLocation.getLongitude()).build(),
             ":latitude", AttributeValue.builder().s(unicornLocation.getLatitude()).build()
         ))
-        .tableName("unicorn-locations")
+        .tableName(tableName)
         .build();
      
          try {
             dynamoDbClient.updateItem(updateItemRequest).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error creating Update Item request");
         }
      }

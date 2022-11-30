@@ -1,25 +1,16 @@
 package com.unicorn.location;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import com.unicorn.location.helper.UnicornDependencyFactory;
+import com.unicorn.location.model.UnicornLocation;
 
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
-import software.amazon.awssdk.core.SdkSystemSetting;
-import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
@@ -36,7 +27,9 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
     private final Logger logger = LoggerFactory.getLogger(UnicornPostLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
+    private final String tableName;
 
+    // Removed the static code loading to accomodate SnapStart feature.
     /* static {
 
         UnicornPostLocationHandler unicornPostLocationHandler;
@@ -44,25 +37,14 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
             unicornPostLocationHandler = new UnicornPostLocationHandler();
             unicornPostLocationHandler.createLocationItem(null);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
     }  */
 
     public UnicornPostLocationHandler() {
-        // dynamoDbClient = DynamoDbClient
-        //         .builder()
-        //         .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-        //         .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-        //         .httpClientBuilder(UrlConnectionHttpClient.builder())
-        //         .build();
-        dynamoDbClient = DynamoDbAsyncClient
-            .builder()
-//            .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-            .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-//            .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
-            .build();
+        dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
+        tableName = UnicornDependencyFactory.tableName();
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
@@ -75,15 +57,10 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
                 .withHeaders(headers);
         try {
 
-
             UnicornLocation unicornLocation = new Gson().fromJson(input.getBody(), UnicornLocation.class);
             unicornLocation.setId(input.getPathParameters() != null? input.getPathParameters().get("id"): UUID.randomUUID().toString());
             createLocationItem(unicornLocation);
             String output = "Received unicorn " + unicornLocation.getUnicornName();
-
-
-            // final String pageContents = this.getPageContents("https://checkip.amazonaws.com");
-            // String output = String.format("{ \"message\": \"hello world\", \"location\": \"%s\" }", pageContents);
 
             return response
                     .withStatusCode(200)
@@ -96,28 +73,23 @@ public class UnicornPostLocationHandler implements RequestHandler<APIGatewayProx
         }
     }
 
-    private String getPageContents(String address) throws IOException{
-        URL url = new URL(address);
-        try(BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
-            return br.lines().collect(Collectors.joining(System.lineSeparator()));
-        }
-    }
-
     private void createLocationItem(UnicornLocation unicornLocation) {
         var putItemRequest = PutItemRequest.builder().item(
          Map.of( 
             //"id", AttributeValue.fromS(UUID.randomUUID().toString()),
                  "id", AttributeValue.fromS(UUID.randomUUID().toString()),
-                "unicornName", AttributeValue.fromS(unicornLocation.getUnicornName()),
+                 "unicornName", AttributeValue.fromS(unicornLocation.getUnicornName()),
                  "latitude", AttributeValue.fromS(unicornLocation.getLatitude()),
                  "longitude", AttributeValue.fromS(unicornLocation.getLongitude())
          ))
-         .tableName("unicorn-locations")
+         .tableName(tableName)
          .build();
      
          try {
             dynamoDbClient.putItem(putItemRequest).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error creating Put Item request");
         }
      }

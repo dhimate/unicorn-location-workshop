@@ -2,13 +2,12 @@ package com.unicorn.location;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import software.amazon.awssdk.core.SdkSystemSetting;
-import software.amazon.awssdk.regions.Region;
+import com.unicorn.location.helper.UnicornDependencyFactory;
+
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
@@ -24,33 +23,11 @@ public class UnicornDeleteLocationHandler implements RequestHandler<APIGatewayPr
     private final Logger logger = LoggerFactory.getLogger(UnicornDeleteLocationHandler.class);
    //private final DynamoDbClient dynamoDbClient;
     private final DynamoDbAsyncClient dynamoDbClient;
-
-    /* static {
-
-        UnicornPostLocationHandler unicornPostLocationHandler;
-        try {
-            unicornPostLocationHandler = new UnicornPostLocationHandler();
-            unicornPostLocationHandler.createLocationItem(null);
-        } catch (Exception e) {
-            
-            e.printStackTrace();
-        }
-
-    }  */
+    private final String tableName;
 
     public UnicornDeleteLocationHandler() {
-        // dynamoDbClient = DynamoDbClient
-        //         .builder()
-        //         .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-        //         .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-        //         .httpClientBuilder(UrlConnectionHttpClient.builder())
-        //         .build();
-        dynamoDbClient = DynamoDbAsyncClient
-            .builder()
-//            .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-            .region(Region.of(System.getenv(SdkSystemSetting.AWS_REGION.environmentVariable())))
-//            .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
-            .build();
+        dynamoDbClient = UnicornDependencyFactory.DynamoDbAsyncClient();
+        tableName = UnicornDependencyFactory.tableName();
     }
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
@@ -66,8 +43,6 @@ public class UnicornDeleteLocationHandler implements RequestHandler<APIGatewayPr
             String id = (input.getPathParameters() != null ? input.getPathParameters().get("id") : null);
             if (id != null)
                 deleteLocationItem(id);
-            // final String pageContents = this.getPageContents("https://checkip.amazonaws.com");
-            // String output = String.format("{ \"message\": \"hello world\", \"location\": \"%s\" }", pageContents);
             return response
                     .withStatusCode(200);
 //                    .withBody(output);
@@ -81,14 +56,14 @@ public class UnicornDeleteLocationHandler implements RequestHandler<APIGatewayPr
 
     private void deleteLocationItem(String id) {        
         DeleteItemRequest deleteItemRequest =  DeleteItemRequest.builder()
-                        .tableName("unicorn-locations").
+                        .tableName(tableName).
                         key(Map.of("id", AttributeValue.builder().s(id).build()))
-                        //.expressionAttributeNames(Map.of("#id", "id"))
-                        //.expressionAttributeValues(Map.of(":id", AttributeValue.builder().s(id).build()))
                         .build();    
          try {
             dynamoDbClient.deleteItem(deleteItemRequest).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error creating Delete Item request");
         }
      }
